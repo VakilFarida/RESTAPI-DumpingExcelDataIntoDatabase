@@ -157,8 +157,8 @@ public class ServiceImplementation implements DeveloperService {
     }
 
     public ByteArrayInputStream load() {
-        List<DeveloperEntity> tutorials = dr.findAll();
-        ByteArrayInputStream in = developersToExcel(tutorials);
+        List<DeveloperEntity> developers = dr.findAll();
+        ByteArrayInputStream in = developersToExcel(developers);
         return in;
       }
 } 
