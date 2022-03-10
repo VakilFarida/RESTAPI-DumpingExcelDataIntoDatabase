@@ -1,15 +1,21 @@
 package com.example.ExcelApi.service.impl;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
 import com.example.ExcelApi.model.entity.DeveloperEntity;
+import com.example.ExcelApi.model.pojo.Developer;
 import com.example.ExcelApi.model.repository.DeveloperRepository;
 import com.example.ExcelApi.service.DeveloperService;
 
+import org.apache.poi.sl.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +38,7 @@ public class ServiceImplementation implements DeveloperService {
     }
    // convert excel to list
     @Override
-    public  List<DeveloperEntity> convertExcelToListOfProduct(InputStream is) 
+    public  List<DeveloperEntity> convertExcelToListOfDeveloper(InputStream is) 
     {
         List<DeveloperEntity> list = new ArrayList<>();
         try{
@@ -87,6 +93,7 @@ public class ServiceImplementation implements DeveloperService {
              list.add(p);
              workbook.close();
             }
+
         } catch (Exception e)
          {
             e.printStackTrace();
@@ -97,7 +104,7 @@ public class ServiceImplementation implements DeveloperService {
     public void save(MultipartFile file)
      {
      try {
-        List<DeveloperEntity> dev=convertExcelToListOfProduct(file.getInputStream());
+        List<DeveloperEntity> dev=convertExcelToListOfDeveloper(file.getInputStream());
         dr.saveAll(dev);
     } catch (IOException e) {
         e.printStackTrace();
@@ -108,5 +115,52 @@ public class ServiceImplementation implements DeveloperService {
     public List<DeveloperEntity> getAllDeveloper() {
        return dr.findAll();
     }
-}
+  //
+    
+
+
+    public static String TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    static String[] HEADERs = { "Id", "FirstName", "LastName", "Designation","Phone" };
+    static String SHEET = "developers";
+    @Override
+    public ByteArrayInputStream developersToExcel(List<DeveloperEntity> developers) {
+  
+      try (Workbook workbook = new XSSFWorkbook(); 
+      ByteArrayOutputStream out = new ByteArrayOutputStream();) {
+        org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet(SHEET);
+  
+        // Header
+        Row headerRow = sheet.createRow(0);
+  
+        for (int col = 0; col < HEADERs.length; col++) {
+          Cell cell = headerRow.createCell(col);
+          cell.setCellValue(HEADERs[col]);
+        }
+  
+        int rowIdx = 1;
+        for (DeveloperEntity developer : developers) {
+          Row row = sheet.createRow(rowIdx++);
+  
+          row.createCell(0).setCellValue(developer.getId());
+          row.createCell(1).setCellValue(developer.getFirstName());
+          row.createCell(2).setCellValue(developer.getLastName());
+          row.createCell(3).setCellValue(developer.getDesignation());
+          row.createCell(4).setCellValue(developer.getPhone());
+
+        }
+  
+        workbook.write(out);
+        return new ByteArrayInputStream(out.toByteArray());
+      } catch (IOException e) {
+        throw new RuntimeException("fail to import data to Excel file: " + e.getMessage());
+      }
+    }
+
+    public ByteArrayInputStream load() {
+        List<DeveloperEntity> tutorials = dr.findAll();
+        ByteArrayInputStream in = developersToExcel(tutorials);
+        return in;
+      }
+} 
+
 
